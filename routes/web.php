@@ -20,3 +20,4 @@ Route::get('/', function () {
 Route::get('/home', 'HomeController@index');
 
 Route::post('/login', 'ApiLoginController@login');
+Route::get('/logout', 'ApiLoginController@logout');

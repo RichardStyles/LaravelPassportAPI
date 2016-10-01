@@ -11,6 +11,28 @@ class ApiLoginController extends Controller
 {
     use AuthenticatesUsers;
 
+    public function showLoginForm()
+    {
+        return ['success'=>false];
+    }
+
+    /**
+     * Redirect the user after determining they are locked out.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    protected function sendLockoutResponse(Request $request)
+    {
+        $seconds = $this->limiter()->availableIn(
+            $this->throttleKey($request)
+        );
+
+        $message = Lang::get('auth.throttle', ['seconds' => $seconds]);
+        $success = false;
+        return compact($success,$message);
+    }
+
     /**
      * The user has been authenticated.
      *
@@ -35,7 +57,25 @@ class ApiLoginController extends Controller
             env('APP_URL').'/oauth/token',
             'post'
         );
-        return Route::dispatch($tokenRequest)->getContent();
+
+        $user->token = json_decode(Route::dispatch($tokenRequest)->getContent(),true);
+        return $user;
     }
 
+    /**
+     * Log the user out of the application.
+     *
+     * @param  Request  $request
+     * @return array
+     */
+    public function logout(Request $request)
+    {
+        $this->guard()->logout();
+
+        $request->session()->flush();
+
+        $request->session()->regenerate();
+
+        return ['success' => true, 'message' => 'Logout complete'];
+    }
 }
